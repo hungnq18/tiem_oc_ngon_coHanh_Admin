@@ -29,10 +29,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   return (
     <>
-      <motion.aside
-        initial={{ x: -300, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        exit={{ x: -300, opacity: 0 }}
+      <aside
         className={`
           fixed md:sticky top-0 left-0 h-screen w-64 bg-white border-r border-primary/5 z-40
           ${isOpen ? 'block' : 'hidden md:block'}
@@ -80,7 +77,7 @@ const Sidebar = ({ isOpen, onClose }) => {
             <span>Đăng xuất</span>
           </button>
         </div>
-      </motion.aside>
+      </aside>
 
       {/* Overlay for mobile menu */}
       {isOpen && (

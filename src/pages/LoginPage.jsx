@@ -34,10 +34,7 @@ const LoginPage = () => {
         <div className="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-secondary/10 rounded-full blur-3xl" />
       </div>
 
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+      <div 
         className="relative z-10 w-full max-w-md"
       >
         <div className="bg-white p-8 rounded-3xl shadow-[0_20px_50px_rgba(123,21,12,0.1)] border border-[#F9C06A]/20">
@@ -60,7 +57,7 @@ const LoginPage = () => {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.value || e.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="input pl-11"
                   placeholder="admin@tiemoc.vn"
                   required
@@ -75,7 +72,7 @@ const LoginPage = () => {
                 <input
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.value || e.target.value)}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="input pl-11"
                   placeholder="••••••••"
                   required
@@ -99,7 +96,7 @@ const LoginPage = () => {
             </button>
           </form>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };

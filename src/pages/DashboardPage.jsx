@@ -56,11 +56,8 @@ const DashboardPage = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-12">
         {mainStats.map((stat, idx) => (
-          <motion.div
+          <div
             key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.1 }}
             className="bg-white p-6 rounded-3xl shadow-sm border border-primary/5 flex items-center gap-4"
           >
             <div className={`w-14 h-14 ${stat.color} rounded-2xl flex items-center justify-center text-white shrink-0`}>
@@ -70,7 +67,7 @@ const DashboardPage = () => {
               <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">{stat.label}</p>
               <h3 className="text-2xl font-bold text-primary">{stat.value}</h3>
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
 
@@ -89,9 +86,8 @@ const DashboardPage = () => {
                 <span className="text-primary">{stats?.click_banner_menu || 0} lần</span>
               </div>
               <div className="w-full bg-gray-100 h-3 rounded-full overflow-hidden">
-                <motion.div 
-                  initial={{ width: 0 }} 
-                  animate={{ width: `${Math.min((stats?.click_banner_menu || 0) / 500 * 100, 100)}%` }}
+                <div 
+                  style={{ width: `${Math.min((stats?.click_banner_menu || 0) / 500 * 100, 100)}%` }}
                   className="bg-primary h-full rounded-full"
                 />
               </div>
@@ -103,9 +99,8 @@ const DashboardPage = () => {
                 <span className="text-primary">{stats?.click_hotline || 0} lần</span>
               </div>
               <div className="w-full bg-gray-100 h-3 rounded-full overflow-hidden">
-                <motion.div 
-                  initial={{ width: 0 }} 
-                  animate={{ width: `${Math.min((stats?.click_hotline || 0) / 100 * 100, 100)}%` }}
+                <div 
+                  style={{ width: `${Math.min((stats?.click_hotline || 0) / 100 * 100, 100)}%` }}
                   className="bg-secondary h-full rounded-full"
                 />
               </div>
@@ -117,9 +112,8 @@ const DashboardPage = () => {
                 <span className="text-primary">{stats?.click_buffet || 0} lần</span>
               </div>
               <div className="w-full bg-gray-100 h-3 rounded-full overflow-hidden">
-                <motion.div 
-                  initial={{ width: 0 }} 
-                  animate={{ width: `${Math.min((stats?.click_buffet || 0) / 200 * 100, 100)}%` }}
+                <div 
+                  style={{ width: `${Math.min((stats?.click_buffet || 0) / 200 * 100, 100)}%` }}
                   className="bg-green-500 h-full rounded-full"
                 />
               </div>
