@@ -14,9 +14,12 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
+  // Commented out for demo
+  /*
   if (!admin) {
     return <Navigate to="/login" replace />;
   }
+  */
 
   return children;
 };
