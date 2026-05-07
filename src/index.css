@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #7B150C;
+  --color-primary-light: #A52A1E;
+  --color-primary-dark: #5D0F08;
+  --color-secondary: #F9C06A;
+  --color-secondary-light: #FFD07F;
+  --color-secondary-dark: #F5A623;
+  --color-background: #FFF9F1;
+
+  --font-serif: "Playfair Display", serif;
+  --font-cursive: "Dancing Script", cursive;
+  --font-sans: "Montserrat", sans-serif;
+}
+
+:root {
+  font-family: var(--font-sans);
+}
+
+body {
+  background-color: var(--color-background);
+  color: #471A1A;
+}
+
+/* Tailwind v4 custom utilities */
+
+@utility btn {
+  @apply px-6 py-2 rounded-full font-bold transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+@utility btn-primary {
+  @apply btn bg-primary text-white hover:bg-primary-light shadow-lg flex items-center justify-center gap-2;
+}
+
+@utility btn-secondary {
+  @apply btn bg-secondary text-primary hover:bg-secondary-light shadow-lg flex items-center justify-center gap-2;
+}
+
+@utility input {
+  @apply w-full px-4 py-2 bg-white border border-[#F9C06A]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all;
+}
