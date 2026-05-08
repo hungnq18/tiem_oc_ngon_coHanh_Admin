@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../api/client';
 import { 
   Plus, Edit2, Trash2, Loader2, Save, X, Search, 
-  Filter, Image as ImageIcon, ChevronLeft, ChevronRight 
+  Filter, Image as ImageIcon, ChevronLeft, ChevronRight, Star
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MediaUpload from '../components/MediaUpload';
@@ -15,6 +15,7 @@ const MenuManagement = () => {
   const [editingItem, setEditingItem] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [filterCategory, setFilterCategory] = useState('');
+  const [filterTag, setFilterTag] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   
   // Pagination State
@@ -36,12 +37,15 @@ const MenuManagement = () => {
 
   useEffect(() => {
     fetchItems(pagination.page);
-  }, [filterCategory, pagination.page]);
+  }, [filterCategory, filterTag, pagination.page]);
 
   const fetchItems = async (page = 1) => {
     setLoading(true);
     try {
-      const url = `/public/menu-items?admin=true&page=${page}&limit=10${filterCategory ? `&category=${filterCategory}` : ''}`;
+      let url = `/public/menu-items?admin=true&page=${page}&limit=10`;
+      if (filterCategory) url += `&category=${filterCategory}`;
+      if (filterTag) url += `&tag=${filterTag}`;
+      
       const res = await api.get(url);
       if (res.success) {
         setItems(res.data.items);
@@ -149,19 +153,39 @@ const MenuManagement = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-2 bg-white px-4 py-1 rounded-xl border border-primary/5 shadow-sm min-w-[200px]">
-          <Filter size={18} className="text-primary" />
-          <select 
-            className="bg-transparent border-none focus:ring-0 text-sm font-bold text-gray-600 w-full outline-none"
-            value={filterCategory}
-            onChange={(e) => {
-              setFilterCategory(e.target.value);
-              setPagination({...pagination, page: 1});
-            }}
-          >
-            <option value="">Tất cả danh mục</option>
-            {categories.map(c => <option key={c._id} value={c.slug}>{c.name}</option>)}
-          </select>
+        
+        <div className="flex flex-wrap gap-4">
+          <div className="flex items-center gap-2 bg-white px-4 py-1 rounded-xl border border-primary/5 shadow-sm min-w-[200px]">
+            <Filter size={18} className="text-primary" />
+            <select 
+              className="bg-transparent border-none focus:ring-0 text-sm font-bold text-gray-600 w-full outline-none py-2"
+              value={filterCategory}
+              onChange={(e) => {
+                setFilterCategory(e.target.value);
+                setPagination({...pagination, page: 1});
+              }}
+            >
+              <option value="">Tất cả danh mục</option>
+              {categories.map(c => <option key={c._id} value={c.slug}>{c.name}</option>)}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 bg-white px-4 py-1 rounded-xl border border-primary/5 shadow-sm min-w-[180px]">
+            <Star size={18} className="text-secondary" />
+            <select 
+              className="bg-transparent border-none focus:ring-0 text-sm font-bold text-gray-600 w-full outline-none py-2"
+              value={filterTag}
+              onChange={(e) => {
+                setFilterTag(e.target.value);
+                setPagination({...pagination, page: 1});
+              }}
+            >
+              <option value="">Tất cả nhãn</option>
+              <option value="signature">Món Signature</option>
+              <option value="must-try">Món Must Try</option>
+              <option value="best-seller">Món Best Seller</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -189,7 +213,10 @@ const MenuManagement = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center overflow-hidden shrink-0 border border-gray-100">
-                          {item.images?.[0]?.url ? <img src={item.images[0].url} className="w-full h-full object-cover" /> : <ImageIcon className="text-gray-300" size={20} />}
+                          {(() => {
+                            const img = item.images?.[0]?.url || (typeof item.image === 'string' ? item.image : item.image?.url);
+                            return img ? <img src={img} className="w-full h-full object-cover" alt={item.name} /> : <ImageIcon className="text-gray-300" size={20} />;
+                          })()}
                         </div>
                         <div>
                           <div className="font-bold text-primary">{item.name}</div>

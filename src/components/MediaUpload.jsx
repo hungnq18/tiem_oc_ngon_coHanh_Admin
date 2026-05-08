@@ -7,7 +7,7 @@ const MediaUpload = ({ value, onChange, label, multiple = false }) => {
   const fileInputRef = useRef(null);
 
   // Đảm bảo value luôn là một mảng nếu ở chế độ multiple
-  const images = multiple ? (Array.isArray(value) ? value : []) : value;
+  const images = multiple ? (Array.isArray(value) ? value : []) : (value || { url: '', publicId: '' });
 
   const handleFileChange = async (e) => {
     const files = Array.from(e.target.files);
@@ -18,7 +18,6 @@ const MediaUpload = ({ value, onChange, label, multiple = false }) => {
     try {
       const validImages = [];
       
-      // Upload từng file một để đảm bảo tính ổn định
       for (const file of files) {
         const formData = new FormData();
         formData.append('image', file);
@@ -33,7 +32,7 @@ const MediaUpload = ({ value, onChange, label, multiple = false }) => {
       }
 
       if (multiple) {
-        onChange([...images, ...validImages]);
+        onChange([...(Array.isArray(images) ? images : []), ...validImages]);
       } else if (validImages.length > 0) {
         onChange(validImages[0]);
       }
@@ -42,6 +41,7 @@ const MediaUpload = ({ value, onChange, label, multiple = false }) => {
       alert('Lỗi khi tải ảnh lên: ' + (err.message || 'Vui lòng thử lại'));
     } finally {
       setUploading(false);
+      // Quan trọng: Reset input để có thể chọn lại chính file vừa xóa nếu muốn
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
@@ -53,17 +53,29 @@ const MediaUpload = ({ value, onChange, label, multiple = false }) => {
     } else {
       onChange({ url: '', publicId: '' });
     }
+    // Reset input file khi xóa
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const renderSingle = () => (
     <div className="relative group">
-      {images?.url ? (
+      {images && (typeof images === 'string' ? images : images.url) ? (
         <div className="relative aspect-video rounded-2xl overflow-hidden border border-primary/10 shadow-sm bg-gray-50">
-          <img src={typeof images === 'string' ? images : images.url} alt="Preview" className="w-full h-full object-cover" />
+          {uploading && (
+            <div className="absolute inset-0 z-20 bg-white/60 backdrop-blur-[2px] flex items-center justify-center">
+              <Loader2 className="animate-spin text-primary" size={32} />
+            </div>
+          )}
+          <img 
+            key={typeof images === 'string' ? images : images.url}
+            src={typeof images === 'string' ? images : images.url} 
+            alt="Preview" 
+            className="w-full h-full object-cover" 
+          />
           <button 
             type="button"
             onClick={() => removeImage()}
-            className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+            className="absolute top-2 right-2 z-30 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
           >
             <X size={16} />
           </button>
@@ -97,7 +109,11 @@ const MediaUpload = ({ value, onChange, label, multiple = false }) => {
           key={img.publicId || idx}
           className="relative aspect-square rounded-xl overflow-hidden border border-primary/10 group shadow-sm bg-gray-100"
         >
-          <img src={typeof img === 'string' ? img : img.url} className="w-full h-full object-cover" />
+          <img 
+            key={typeof img === 'string' ? img : img.url}
+            src={typeof img === 'string' ? img : img.url} 
+            className="w-full h-full object-cover" 
+          />
           <button 
             type="button"
             onClick={() => removeImage(idx)}
@@ -117,10 +133,12 @@ const MediaUpload = ({ value, onChange, label, multiple = false }) => {
         type="button"
         onClick={() => fileInputRef.current?.click()}
         disabled={uploading}
-        className="aspect-square rounded-xl border-2 border-dashed border-primary/20 hover:border-primary/40 transition-all flex flex-col items-center justify-center gap-1 bg-primary/5 text-primary/60"
+        className="aspect-square rounded-xl border-2 border-dashed border-primary/20 hover:border-primary/40 transition-all flex flex-col items-center justify-center gap-1 bg-primary/5 text-primary/60 relative overflow-hidden"
       >
         {uploading ? (
-          <Loader2 className="animate-spin" size={20} />
+          <div className="absolute inset-0 flex items-center justify-center bg-white/60">
+            <Loader2 className="animate-spin" size={20} />
+          </div>
         ) : (
           <>
             <Plus size={20} />
