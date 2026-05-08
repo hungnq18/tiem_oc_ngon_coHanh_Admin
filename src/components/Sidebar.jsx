@@ -52,12 +52,12 @@ const Sidebar = ({ isOpen, onClose }) => {
       <aside
         className={`
           fixed md:sticky top-0 left-0 h-screen w-64 bg-white border-r border-primary/5 z-40
-          flex flex-col overflow-hidden
+          grid grid-rows-[auto_1fr_auto] overflow-hidden
           ${isOpen ? 'block' : 'hidden md:block'}
         `}
       >
-        {/* Logo Section */}
-        <div className="p-8 hidden md:flex flex-col items-center border-b border-primary/5 flex-shrink-0">
+        {/* Logo Section - Fixed top */}
+        <div className="p-8 hidden md:flex flex-col items-center border-b border-primary/5">
           <div className="w-20 h-20 bg-primary/5 rounded-2xl flex items-center justify-center overflow-hidden mb-4 p-2">
             <img src={logo || logoImg} alt="Logo" className="w-full h-full object-contain" />
           </div>
@@ -67,8 +67,8 @@ const Sidebar = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* Navigation Section - Scrollable */}
-        <nav className="flex-1 overflow-y-auto min-h-0 px-4 py-4 space-y-2 scrollbar-thin scrollbar-primary">
+        {/* Navigation Section - Scrollable middle */}
+        <nav className="overflow-y-auto px-4 py-4 space-y-2 scrollbar-thin scrollbar-primary">
           {menuItems.map((item) => (
             <NavLink
               key={item.label}
@@ -87,8 +87,8 @@ const Sidebar = ({ isOpen, onClose }) => {
           ))}
         </nav>
 
-        {/* Bottom Actions Section */}
-        <div className="p-4 border-t border-primary/5 space-y-2 flex-shrink-0 pb-8">
+        {/* Bottom Actions Section - Fixed bottom */}
+        <div className="p-4 border-t border-primary/5 space-y-2 pb-8">
           <a 
             href="http://localhost:5173" 
             target="_blank" 
