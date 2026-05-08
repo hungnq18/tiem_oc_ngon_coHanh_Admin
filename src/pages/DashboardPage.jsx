@@ -25,7 +25,7 @@ const DashboardPage = () => {
   const fetchStats = async () => {
     try {
       const res = await api.get('/admin/analytics/stats?days=30');
-      if (res.success) setStats(res.data);
+      if (res.success) setStats(res.data.totals);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -74,10 +74,18 @@ const DashboardPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Conversion Section */}
         <section className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-primary/5">
-          <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-primary">
-            <TrendingUp className="text-secondary" />
-            <span>Tỉ lệ chuyển đổi</span>
-          </h3>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-bold flex items-center gap-2 text-primary">
+              <TrendingUp className="text-secondary" />
+              <span>Tỉ lệ chuyển đổi</span>
+            </h3>
+            <button 
+              onClick={() => navigate('/analytics')}
+              className="text-xs font-bold text-primary hover:underline bg-primary/5 px-3 py-1.5 rounded-full"
+            >
+              Xem chi tiết
+            </button>
+          </div>
           
           <div className="space-y-6">
             <div className="space-y-2">

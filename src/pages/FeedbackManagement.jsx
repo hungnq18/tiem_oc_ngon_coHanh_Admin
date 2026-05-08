@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import api from '../api/client';
 import { 
   MessageSquare, Trash2, Loader2, CheckCircle, 
-  Clock, User, Phone, ChevronLeft, ChevronRight, Mail 
+  Clock, User, Phone, ChevronLeft, ChevronRight, Mail,
+  Search, Filter, Inbox, CheckSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -10,21 +11,45 @@ const FeedbackManagement = () => {
   const [feedbacks, setFeedbacks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
+  const [status, setStatus] = useState('all');
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     fetchFeedback(pagination.page);
-  }, [pagination.page]);
+  }, [pagination.page, status]);
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchFeedback(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const fetchFeedback = async (page = 1) => {
     setLoading(true);
     try {
-      const res = await api.get(`/admin/feedback?page=${page}&limit=10`);
+      let url = `/admin/feedback?page=${page}&limit=10`;
+      if (status !== 'all') url += `&status=${status}`;
+      if (search) url += `&search=${search}`;
+      
+      const res = await api.get(url);
       if (res.success) {
         setFeedbacks(res.data.items);
         setPagination(res.data.pagination);
       }
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
+  };
+
+  const markAllRead = async () => {
+    if (!window.confirm('Đánh dấu tất cả góp ý là đã đọc?')) return;
+    try {
+      const res = await api.put('/admin/feedback/read-all');
+      if (res.success) {
+        setFeedbacks(feedbacks.map(f => ({ ...f, isRead: true })));
+      }
+    } catch (err) { console.error(err); }
   };
 
   const markAsRead = async (id) => {
@@ -44,17 +69,75 @@ const FeedbackManagement = () => {
 
   return (
     <div className="space-y-8 pb-20">
-      <header>
-        <h2 className="text-3xl font-bold text-primary font-serif">Góp ý khách hàng</h2>
-        <p className="text-gray-500">Xem các phản hồi và ý kiến đóng góp từ website</p>
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div>
+          <h2 className="text-3xl font-bold text-primary font-serif">Góp ý khách hàng</h2>
+          <p className="text-gray-500">Xem các phản hồi và ý kiến đóng góp từ website</p>
+        </div>
+        
+        <div className="bg-white px-4 py-2 rounded-2xl shadow-sm border border-primary/5 flex items-center gap-3">
+          <Inbox size={20} className="text-secondary" />
+          <span className="font-bold text-primary">{pagination.total}</span>
+          <span className="text-gray-400 text-sm">phản hồi</span>
+        </div>
       </header>
+
+      {/* Filter Bar */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-2 relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          <input 
+            type="text"
+            placeholder="Tìm theo tên, SĐT hoặc nội dung..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-12 pr-4 py-4 bg-white rounded-2xl border border-primary/5 shadow-sm outline-none focus:ring-2 ring-primary/10 transition-all font-serif"
+          />
+        </div>
+
+        <div className="flex bg-white p-1.5 rounded-2xl shadow-sm border border-primary/5">
+          {[
+            { id: 'all', label: 'Tất cả' },
+            { id: 'unread', label: 'Chưa đọc' },
+            { id: 'read', label: 'Đã đọc' },
+          ].map((s) => (
+            <button
+              key={s.id}
+              onClick={() => setStatus(s.id)}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                status === s.id ? 'bg-primary text-white shadow-md' : 'text-gray-400 hover:text-primary'
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        {feedbacks.some(f => !f.isRead) && (
+          <button
+            onClick={markAllRead}
+            className="flex items-center justify-center gap-2 px-6 py-4 bg-white text-green-600 rounded-2xl border border-green-100 shadow-sm font-bold text-sm hover:bg-green-50 transition-all"
+          >
+            <CheckSquare size={18} />
+            <span>Đọc tất cả</span>
+          </button>
+        )}
+      </div>
 
       {loading ? (
         <div className="flex justify-center p-20"><Loader2 className="animate-spin text-primary" size={40} /></div>
       ) : feedbacks.length === 0 ? (
         <div className="bg-white p-20 rounded-3xl text-center border border-primary/5 shadow-sm">
-           <MessageSquare className="mx-auto text-gray-200 mb-4" size={64} />
-           <p className="text-gray-400 font-medium font-serif text-xl">Chưa có góp ý nào từ khách hàng</p>
+           <Filter className="mx-auto text-gray-200 mb-4" size={64} />
+           <p className="text-gray-400 font-medium font-serif text-xl">Không tìm thấy góp ý nào phù hợp</p>
+           {(search || status !== 'all') && (
+             <button 
+              onClick={() => { setSearch(''); setStatus('all'); }}
+              className="mt-4 text-primary font-bold hover:underline"
+             >
+              Xóa bộ lọc
+             </button>
+           )}
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6">

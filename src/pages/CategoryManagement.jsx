@@ -17,7 +17,7 @@ const CategoryManagement = () => {
 
   const fetchCategories = async () => {
     try {
-      const res = await api.get('/public/categories');
+      const res = await api.get('/public/categories?admin=true');
       if (res.success) setCategories(res.data);
     } catch (err) {
       console.error(err);

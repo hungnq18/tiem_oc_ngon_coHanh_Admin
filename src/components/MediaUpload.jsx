@@ -1,87 +1,156 @@
 import React, { useState, useRef } from 'react';
 import api from '../api/client';
-import { Upload, X, Loader2, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, Loader2, Image as ImageIcon, Plus } from 'lucide-react';
 
-const MediaUpload = ({ value, onChange, label }) => {
+const MediaUpload = ({ value, onChange, label, multiple = false }) => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
+  // Đảm bảo value luôn là một mảng nếu ở chế độ multiple
+  const images = multiple ? (Array.isArray(value) ? value : []) : value;
+
   const handleFileChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
 
     setUploading(true);
-    const formData = new FormData();
-    formData.append('image', file);
-
+    
     try {
-      // Vì client.js sử dụng axios và có interceptor, ta cần truyền đúng headers
-      const res = await api.post('/admin/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const validImages = [];
       
-      if (res.success) {
-        onChange(res.data); // Trả về { url, publicId }
+      // Upload từng file một để đảm bảo tính ổn định
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        const res = await api.post('/admin/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        
+        if (res.success && res.data) {
+          validImages.push(res.data);
+        }
+      }
+
+      if (multiple) {
+        onChange([...images, ...validImages]);
+      } else if (validImages.length > 0) {
+        onChange(validImages[0]);
       }
     } catch (err) {
-      alert('Lỗi khi tải ảnh lên: ' + (err.response?.data?.message || err.message));
+      console.error('Upload error:', err);
+      alert('Lỗi khi tải ảnh lên: ' + (err.message || 'Vui lòng thử lại'));
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  const removeImage = () => {
-    onChange({ url: '', publicId: '' });
+  const removeImage = (index) => {
+    if (multiple) {
+      const newList = images.filter((_, i) => i !== index);
+      onChange(newList);
+    } else {
+      onChange({ url: '', publicId: '' });
+    }
   };
 
+  const renderSingle = () => (
+    <div className="relative group">
+      {images?.url ? (
+        <div className="relative aspect-video rounded-2xl overflow-hidden border border-primary/10 shadow-sm bg-gray-50">
+          <img src={typeof images === 'string' ? images : images.url} alt="Preview" className="w-full h-full object-cover" />
+          <button 
+            type="button"
+            onClick={() => removeImage()}
+            className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="w-full aspect-video rounded-2xl border-2 border-dashed border-primary/20 hover:border-primary/40 transition-all flex flex-col items-center justify-center gap-2 bg-primary/5 text-primary/60"
+        >
+          {uploading ? (
+            <Loader2 className="animate-spin text-primary" size={32} />
+          ) : (
+            <>
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
+                <Upload size={20} />
+              </div>
+              <span className="text-xs font-bold uppercase tracking-wider">Tải ảnh lên</span>
+            </>
+          )}
+        </button>
+      )}
+    </div>
+  );
+
+  const renderMultiple = () => (
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      {images.map((img, idx) => (
+        <div 
+          key={img.publicId || idx}
+          className="relative aspect-square rounded-xl overflow-hidden border border-primary/10 group shadow-sm bg-gray-100"
+        >
+          <img src={typeof img === 'string' ? img : img.url} className="w-full h-full object-cover" />
+          <button 
+            type="button"
+            onClick={() => removeImage(idx)}
+            className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+          >
+            <X size={12} />
+          </button>
+          {idx === 0 && (
+            <div className="absolute bottom-0 left-0 right-0 bg-primary/80 text-white text-[8px] font-bold uppercase py-0.5 text-center">
+              Ảnh đại diện
+            </div>
+          )}
+        </div>
+      ))}
+      
+      <button
+        type="button"
+        onClick={() => fileInputRef.current?.click()}
+        disabled={uploading}
+        className="aspect-square rounded-xl border-2 border-dashed border-primary/20 hover:border-primary/40 transition-all flex flex-col items-center justify-center gap-1 bg-primary/5 text-primary/60"
+      >
+        {uploading ? (
+          <Loader2 className="animate-spin" size={20} />
+        ) : (
+          <>
+            <Plus size={20} />
+            <span className="text-[10px] font-bold uppercase">Thêm ảnh</span>
+          </>
+        )}
+      </button>
+    </div>
+  );
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {label && <label className="text-sm font-bold text-primary">{label}</label>}
       
-      <div className="relative group">
-        {value?.url ? (
-          <div className="relative aspect-video rounded-2xl overflow-hidden border border-primary/10 shadow-inner bg-gray-50">
-            <img src={value.url} alt="Preview" className="w-full h-full object-cover" />
-            <button 
-              type="button"
-              onClick={removeImage}
-              className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="w-full aspect-video rounded-2xl border-2 border-dashed border-primary/20 hover:border-primary/40 transition-all flex flex-col items-center justify-center gap-2 bg-primary/5 text-primary/60 group"
-          >
-            {uploading ? (
-              <Loader2 className="animate-spin text-primary" size={32} />
-            ) : (
-              <>
-                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                  <Upload size={20} />
-                </div>
-                <span className="text-xs font-bold uppercase tracking-wider">Tải ảnh lên</span>
-              </>
-            )}
-          </button>
-        )}
-      </div>
+      {multiple ? renderMultiple() : renderSingle()}
 
       <input 
         ref={fileInputRef}
         type="file" 
         className="hidden" 
         accept="image/*"
+        multiple={multiple}
         onChange={handleFileChange}
       />
       
       <p className="text-[10px] text-gray-400 italic">
-        * Khuyên dùng ảnh tỉ lệ 16:9, dung lượng dưới 5MB
+        {multiple 
+          ? "* Bạn có thể chọn nhiều ảnh cùng lúc. Ảnh đầu tiên sẽ làm ảnh đại diện."
+          : "* Khuyên dùng ảnh tỉ lệ 16:9, dung lượng dưới 5MB"
+        }
       </p>
     </div>
   );

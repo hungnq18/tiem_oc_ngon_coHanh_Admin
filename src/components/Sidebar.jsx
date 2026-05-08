@@ -10,12 +10,31 @@ import {
   LogOut,
   ExternalLink,
   Globe,
-  MessageSquare
+  MessageSquare,
+  BarChart3
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import logoImg from '../assets/logo.png';
+import api from '../api/client';
+import { useEffect, useState } from 'react';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const { logout } = useAuth();
+  const [logo, setLogo] = useState(null);
+
+  useEffect(() => {
+    const fetchLogo = async () => {
+      try {
+        const res = await api.get('/public/shop-config');
+        if (res.success && res.data.logo?.url) {
+          setLogo(res.data.logo.url);
+        }
+      } catch (err) {
+        console.error('Error fetching logo:', err);
+      }
+    };
+    fetchLogo();
+  }, []);
 
   const menuItems = [
     { label: 'Tổng quan', icon: LayoutDashboard, path: '/' },
@@ -24,6 +43,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     { label: 'Buffet', icon: PlusCircle, path: '/buffet' },
     { label: 'Cấu hình SEO', icon: Globe, path: '/seo' },
     { label: 'Góp ý', icon: MessageSquare, path: '/feedback' },
+    { label: 'Phân tích', icon: BarChart3, path: '/analytics' },
     { label: 'Cài đặt Shop', icon: Settings, path: '/settings' },
   ];
 
@@ -35,9 +55,14 @@ const Sidebar = ({ isOpen, onClose }) => {
           ${isOpen ? 'block' : 'hidden md:block'}
         `}
       >
-        <div className="p-8 hidden md:block">
-          <h1 className="font-cursive text-3xl text-primary">Tiệm Ốc</h1>
-          <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-2">Hệ quản trị</p>
+        <div className="p-8 hidden md:flex flex-col items-center border-b border-primary/5 mb-4">
+          <div className="w-20 h-20 bg-primary/5 rounded-2xl flex items-center justify-center overflow-hidden mb-4 p-2">
+            <img src={logo || logoImg} alt="Logo" className="w-full h-full object-contain" />
+          </div>
+          <div className="text-center">
+            <h1 className="font-cursive text-2xl text-primary leading-tight">Tiệm Ốc</h1>
+            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Hệ quản trị</p>
+          </div>
         </div>
 
         <nav className="px-4 py-4 space-y-2">

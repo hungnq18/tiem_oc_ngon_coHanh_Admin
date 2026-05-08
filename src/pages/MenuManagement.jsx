@@ -24,10 +24,10 @@ const MenuManagement = () => {
     name: '',
     description: '',
     price: 0,
+    images: [],
     categoryId: '',
     tags: { isSignature: false, isMustTry: false, isBestSeller: false },
-    isActive: true,
-    image: { url: '', publicId: '' }
+    isActive: true
   });
 
   useEffect(() => {
@@ -53,7 +53,7 @@ const MenuManagement = () => {
 
   const fetchCategories = async () => {
     try {
-      const res = await api.get('/public/categories');
+      const res = await api.get('/public/categories?admin=true');
       if (res.success) setCategories(res.data);
     } catch (err) { console.error(err); }
   };
@@ -67,7 +67,7 @@ const MenuManagement = () => {
       } else {
         await api.post('/admin/menu-items', formData);
       }
-      fetchItems(pagination.page);
+      await fetchItems(pagination.page); // Đợi lấy dữ liệu mới xong mới đóng modal
       closeModal();
     } catch (err) {
       alert(err.message || 'Lỗi khi lưu món ăn');
@@ -93,17 +93,23 @@ const MenuManagement = () => {
         price: item.price,
         categoryId: item.categoryId?._id || item.categoryId,
         tags: { ...item.tags },
-        isActive: item.isActive,
-        image: { ...item.image }
+        images: item.images?.length > 0 
+          ? item.images 
+          : (item.image 
+              ? [typeof item.image === 'string' ? { url: item.image, publicId: '' } : item.image] 
+              : []),
+        isActive: item.isActive
       });
     } else {
       setEditingItem(null);
       setFormData({
-        name: '', description: '', price: 0,
+        name: '', 
+        description: '', 
+        price: 0,
         categoryId: categories[0]?._id || '',
         tags: { isSignature: false, isMustTry: false, isBestSeller: false },
-        isActive: true,
-        image: { url: '', publicId: '' }
+        images: [],
+        isActive: true
       });
     }
     setIsModalOpen(true);
@@ -183,13 +189,13 @@ const MenuManagement = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center overflow-hidden shrink-0 border border-gray-100">
-                          {item.image?.url ? <img src={item.image.url} className="w-full h-full object-cover" /> : <ImageIcon className="text-gray-300" size={20} />}
+                          {item.images?.[0]?.url ? <img src={item.images[0].url} className="w-full h-full object-cover" /> : <ImageIcon className="text-gray-300" size={20} />}
                         </div>
                         <div>
                           <div className="font-bold text-primary">{item.name}</div>
                           <div className="text-xs flex gap-1 mt-1">
                             {item.tags.isSignature && <span className="bg-orange-100 text-orange-600 px-1.5 rounded font-bold">Signature</span>}
-                            {item.tags.isBestSeller && <span className="bg-red-100 text-red-600 px-1.5 rounded font-bold">Best Seller</span>}
+                            {item.tags.isMustTry && <span className="bg-red-100 text-red-600 px-1.5 rounded font-bold">Must Try</span>}
                           </div>
                         </div>
                       </div>
@@ -302,8 +308,9 @@ const MenuManagement = () => {
                 <div className="space-y-6">
                   <MediaUpload 
                     label="Hình ảnh món ăn"
-                    value={formData.image}
-                    onChange={(imgData) => setFormData({ ...formData, image: imgData })}
+                    multiple={true}
+                    value={formData.images}
+                    onChange={(imgs) => setFormData({ ...formData, images: imgs })}
                   />
 
                   <div className="space-y-3">
@@ -314,8 +321,8 @@ const MenuManagement = () => {
                         <span className="text-sm font-medium">Món Signature</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-gray-50 rounded-lg">
-                        <input type="checkbox" checked={formData.tags.isBestSeller} onChange={(e) => setFormData({ ...formData, tags: { ...formData.tags, isBestSeller: e.target.checked } })} />
-                        <span className="text-sm font-medium">Món Best Seller</span>
+                        <input type="checkbox" checked={formData.tags.isMustTry} onChange={(e) => setFormData({ ...formData, tags: { ...formData.tags, isMustTry: e.target.checked } })} />
+                        <span className="text-sm font-medium">Món Must Try</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-gray-50 rounded-lg">
                         <input type="checkbox" checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} />

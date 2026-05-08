@@ -34,6 +34,7 @@ const BuffetManagement = () => {
     setSubmitting(true);
     try {
       await api.put('/admin/buffet', buffet);
+      await fetchBuffet(); // Tải lại dữ liệu chuẩn từ server
       alert('Cập nhật buffet thành công!');
     } catch (err) { alert(err.message); }
     finally { setSubmitting(false); }
@@ -42,7 +43,7 @@ const BuffetManagement = () => {
   const addItem = () => {
     setBuffet({
       ...buffet,
-      items: [...buffet.items, { name: '', image: { url: '', publicId: '' } }]
+      items: [...buffet.items, { name: '', image: { url: '', publicId: '' }, position: 'main' }]
     });
   };
 
@@ -157,14 +158,29 @@ const BuffetManagement = () => {
                   onChange={(imgData) => updateItemData(idx, 'image', imgData)}
                 />
 
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-primary">Tên món tráng miệng</label>
-                  <input 
-                    type="text" className="input bg-white" 
-                    placeholder="VD: Chè khúc bạch"
-                    value={item.name}
-                    onChange={(e) => updateItemData(idx, 'name', e.target.value)}
-                  />
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-primary">Vị trí hiển thị</label>
+                    <select 
+                      className="input bg-white"
+                      value={item.position || 'main'}
+                      onChange={(e) => updateItemData(idx, 'position', e.target.value)}
+                    >
+                      <option value="main">Chính giữa (Lớn nhất)</option>
+                      <option value="left">Phía bên trái</option>
+                      <option value="right">Phía bên phải</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-primary">Tên món tráng miệng</label>
+                    <input 
+                      type="text" className="input bg-white" 
+                      placeholder="VD: Chè khúc bạch"
+                      value={item.name}
+                      onChange={(e) => updateItemData(idx, 'name', e.target.value)}
+                    />
+                  </div>
                 </div>
               </motion.div>
             ))}
