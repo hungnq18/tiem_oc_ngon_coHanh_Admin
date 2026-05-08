@@ -42,7 +42,7 @@ const MenuManagement = () => {
   const fetchItems = async (page = 1) => {
     setLoading(true);
     try {
-      let url = `/public/menu-items?admin=true&page=${page}&limit=10`;
+      let url = `/public/menu-items?admin=true&page=${page}&limit=10&_t=${Date.now()}`;
       if (filterCategory) url += `&category=${filterCategory}`;
       if (filterTag) url += `&tag=${filterTag}`;
       
