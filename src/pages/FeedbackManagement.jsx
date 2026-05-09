@@ -6,6 +6,7 @@ import {
   Search, Filter, Inbox, CheckSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useModal } from '../contexts/ModalContext';
 
 const FeedbackManagement = () => {
   const [feedbacks, setFeedbacks] = useState([]);
@@ -13,6 +14,7 @@ const FeedbackManagement = () => {
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [status, setStatus] = useState('all');
   const [search, setSearch] = useState('');
+  const { showAlert, showConfirm } = useModal();
 
   useEffect(() => {
     fetchFeedback(pagination.page);
@@ -43,28 +45,40 @@ const FeedbackManagement = () => {
   };
 
   const markAllRead = async () => {
-    if (!window.confirm('Đánh dấu tất cả góp ý là đã đọc?')) return;
-    try {
-      const res = await api.put('/admin/feedback/read-all');
-      if (res.success) {
-        setFeedbacks(feedbacks.map(f => ({ ...f, isRead: true })));
+    showConfirm(
+      'Xác nhận',
+      'Đánh dấu tất cả góp ý là đã đọc?',
+      async () => {
+        try {
+          const res = await api.put('/admin/feedback/read-all');
+          if (res.success) {
+            setFeedbacks(feedbacks.map(f => ({ ...f, isRead: true })));
+            showAlert('Thành công', 'Đã đánh dấu tất cả là đã đọc', 'success');
+          }
+        } catch (err) { showAlert('Lỗi', err.message || 'Có lỗi xảy ra', 'error'); }
       }
-    } catch (err) { console.error(err); }
+    );
   };
 
   const markAsRead = async (id) => {
     try {
       await api.put(`/admin/feedback/${id}/read`);
       setFeedbacks(feedbacks.map(f => f._id === id ? { ...f, isRead: true } : f));
-    } catch (err) { console.error(err); }
+    } catch (err) { showAlert('Lỗi', err.message || 'Có lỗi xảy ra', 'error'); }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Xóa góp ý này?')) return;
-    try {
-      await api.delete(`/admin/feedback/${id}`);
-      fetchFeedback(pagination.page);
-    } catch (err) { console.error(err); }
+    showConfirm(
+      'Xác nhận xóa',
+      'Xóa góp ý này?',
+      async () => {
+        try {
+          await api.delete(`/admin/feedback/${id}`);
+          fetchFeedback(pagination.page);
+          showAlert('Thành công', 'Đã xóa góp ý', 'success');
+        } catch (err) { showAlert('Lỗi', err.message || 'Có lỗi xảy ra', 'error'); }
+      }
+    );
   };
 
   return (

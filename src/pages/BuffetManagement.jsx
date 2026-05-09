@@ -3,10 +3,12 @@ import api from '../api/client';
 import { Save, Loader2, Plus, Trash2, Clock, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
 import MediaUpload from '../components/MediaUpload';
+import { useModal } from '../contexts/ModalContext';
 
 const BuffetManagement = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const { showAlert } = useModal();
   const [buffet, setBuffet] = useState({
     title: '',
     subtitle: '',
@@ -34,10 +36,13 @@ const BuffetManagement = () => {
     setSubmitting(true);
     try {
       await api.put('/admin/buffet', buffet);
-      await fetchBuffet(); // Tải lại dữ liệu chuẩn từ server
-      alert('Cập nhật buffet thành công!');
-    } catch (err) { alert(err.message); }
-    finally { setSubmitting(false); }
+      await fetchBuffet();
+      showAlert('Thành công', 'Cập nhật buffet thành công!', 'success');
+    } catch (err) { 
+      showAlert('Lỗi', err.message, 'error'); 
+    } finally { 
+      setSubmitting(false); 
+    }
   };
 
   const addItem = () => {

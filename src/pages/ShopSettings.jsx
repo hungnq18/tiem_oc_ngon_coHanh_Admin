@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import MediaUpload from '../components/MediaUpload';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useModal } from '../contexts/ModalContext';
 
 const FacebookIcon = ({ size = 20, ...props }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" {...props}>
@@ -60,6 +61,7 @@ const PREDEFINED_LINKS = [
 const ShopSettings = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const { showAlert } = useModal();
   const [config, setConfig] = useState({
     shopName: '',
     logo: { url: '', publicId: '' },
@@ -98,8 +100,8 @@ const ShopSettings = () => {
     setSubmitting(true);
     try {
       await api.put('/admin/shop-config', config);
-      alert('Cập nhật cấu hình thành công!');
-    } catch (err) { alert(err.message); }
+      showAlert('Thành công', 'Cập nhật cấu hình thành công!', 'success');
+    } catch (err) { showAlert('Lỗi', err.message, 'error'); }
     finally { setSubmitting(false); }
   };
 

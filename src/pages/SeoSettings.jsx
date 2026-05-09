@@ -3,10 +3,12 @@ import api from '../api/client';
 import { Save, Loader2, Search, Share2, Globe, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import MediaUpload from '../components/MediaUpload';
+import { useModal } from '../contexts/ModalContext';
 
 const SeoSettings = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const { showAlert } = useModal();
   const [seo, setSeo] = useState({
     title: '',
     description: '',
@@ -44,9 +46,12 @@ const SeoSettings = () => {
     setSubmitting(true);
     try {
       await api.put('/admin/shop-config', { seo });
-      alert('Cập nhật cấu hình SEO thành công!');
-    } catch (err) { alert(err.message); }
-    finally { setSubmitting(false); }
+      showAlert('Thành công', 'Cập nhật cấu hình SEO thành công!', 'success');
+    } catch (err) { 
+      showAlert('Lỗi', err.message, 'error'); 
+    } finally { 
+      setSubmitting(false); 
+    }
   };
 
   if (loading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin text-primary" size={40} /></div>;

@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/client';
-import { Plus, Edit2, Trash2, Loader2, Save, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, Loader2, Save, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useModal } from '../contexts/ModalContext';
 
 const CategoryManagement = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
-  const [formData, setFormData] = useState({ name: '', order: 0 });
+  const [formData, setFormData] = useState({ name: '', order: 0, isActive: true });
   const [submitting, setSubmitting] = useState(false);
+  const [reordering, setReordering] = useState(false);
+  const [errors, setErrors] = useState({});
+  const { showAlert, showConfirm } = useModal();
 
   useEffect(() => {
     fetchCategories();
@@ -17,7 +21,7 @@ const CategoryManagement = () => {
 
   const fetchCategories = async () => {
     try {
-      const res = await api.get('/public/categories?admin=true');
+      const res = await api.get(`/admin/categories?_t=${Date.now()}`);
       if (res.success) setCategories(res.data);
     } catch (err) {
       console.error(err);
@@ -28,6 +32,34 @@ const CategoryManagement = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const newErrors = {};
+    
+    // Validate name
+    if (!formData.name.trim()) {
+      newErrors.name = 'Tên danh mục không được để trống';
+    }
+
+    // Validate order
+    const orderVal = parseInt(formData.order);
+    if (isNaN(orderVal) || orderVal < 0) {
+      newErrors.order = 'Thứ tự hiển thị phải là số từ 0 trở lên';
+    }
+
+    // Check duplicate order
+    const isDuplicate = categories.some(c => 
+      c.order === formData.order && 
+      c._id !== editingCategory?._id
+    );
+    if (isDuplicate) {
+      newErrors.order = `Thứ tự ${formData.order} đã tồn tại`;
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setErrors({});
     setSubmitting(true);
     try {
       if (editingCategory) {
@@ -37,30 +69,61 @@ const CategoryManagement = () => {
       }
       fetchCategories();
       closeModal();
+      showAlert('Thành công', 'Lưu danh mục thành công', 'success');
     } catch (err) {
-      alert(err.message || 'Lỗi khi lưu danh mục');
+      showAlert('Lỗi', err.message || 'Lỗi khi lưu danh mục', 'error');
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa danh mục này?')) return;
+    showConfirm(
+      'Xác nhận xóa',
+      'Bạn có chắc chắn muốn xóa danh mục này? Hành động này không thể hoàn tác.',
+      async () => {
+        try {
+          await api.delete(`/admin/categories/${id}`);
+          fetchCategories();
+          showAlert('Thành công', 'Đã xóa danh mục', 'success');
+        } catch (err) {
+          showAlert('Lỗi', err.message || 'Lỗi khi xóa danh mục', 'error');
+        }
+      }
+    );
+  };
+
+  const handleReorder = async (direction, index) => {
+    if (reordering) return;
+    const newCategories = [...categories];
+    if (direction === 'up' && index > 0) {
+      [newCategories[index], newCategories[index - 1]] = [newCategories[index - 1], newCategories[index]];
+    } else if (direction === 'down' && index < newCategories.length - 1) {
+      [newCategories[index], newCategories[index + 1]] = [newCategories[index + 1], newCategories[index]];
+    } else {
+      return;
+    }
+
+    setReordering(true);
     try {
-      await api.delete(`/admin/categories/${id}`);
+      await api.post('/admin/categories/reorder', {
+        orderedIds: newCategories.map(c => c._id)
+      });
       fetchCategories();
     } catch (err) {
-      alert(err.message || 'Lỗi khi xóa danh mục');
+      showAlert('Lỗi', err.message || 'Lỗi khi sắp xếp', 'error');
+    } finally {
+      setReordering(false);
     }
   };
 
   const openModal = (category = null) => {
     if (category) {
       setEditingCategory(category);
-      setFormData({ name: category.name, order: category.order });
+      setFormData({ name: category.name, order: category.order, isActive: category.isActive });
     } else {
       setEditingCategory(null);
-      setFormData({ name: '', order: categories.length });
+      setFormData({ name: '', order: categories.length, isActive: true });
     }
     setIsModalOpen(true);
   };
@@ -68,7 +131,8 @@ const CategoryManagement = () => {
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingCategory(null);
-    setFormData({ name: '', order: 0 });
+    setFormData({ name: '', order: 0, isActive: true });
+    setErrors({});
   };
 
   if (loading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin text-primary" size={40} /></div>;
@@ -93,15 +157,46 @@ const CategoryManagement = () => {
               <th className="px-6 py-4 font-bold uppercase text-xs tracking-wider">Thứ tự</th>
               <th className="px-6 py-4 font-bold uppercase text-xs tracking-wider">Tên danh mục</th>
               <th className="px-6 py-4 font-bold uppercase text-xs tracking-wider">Slug</th>
+              <th className="px-6 py-4 font-bold uppercase text-xs tracking-wider">Trạng thái</th>
               <th className="px-6 py-4 font-bold uppercase text-xs tracking-wider text-right">Thao tác</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {categories.map((cat) => (
+            {categories.map((cat, idx) => (
               <tr key={cat._id} className="hover:bg-gray-50/50 transition-colors">
-                <td className="px-6 py-4 font-medium text-gray-500">{cat.order}</td>
+                <td className="px-6 py-4 font-medium text-gray-500">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 text-center">{cat.order}</span>
+                    <div className="flex flex-col">
+                      <button 
+                        onClick={() => handleReorder('up', idx)}
+                        disabled={idx === 0 || reordering}
+                        className="p-0.5 hover:text-primary disabled:opacity-30"
+                      >
+                        <ChevronUp size={14} />
+                      </button>
+                      <button 
+                        onClick={() => handleReorder('down', idx)}
+                        disabled={idx === categories.length - 1 || reordering}
+                        className="p-0.5 hover:text-primary disabled:opacity-30"
+                      >
+                        <ChevronDown size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </td>
                 <td className="px-6 py-4 font-bold text-primary">{cat.name}</td>
                 <td className="px-6 py-4 text-gray-400 text-sm">{cat.slug}</td>
+                <td className="px-6 py-4">
+                  {cat.isActive ? (
+                    <span className="flex items-center gap-1.5 text-green-500 text-xs font-bold uppercase">
+                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                      Hiển thị
+                    </span>
+                  ) : (
+                    <span className="text-gray-400 text-xs font-bold uppercase">Ẩn</span>
+                  )}
+                </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex justify-end gap-2">
                     <button 
@@ -150,10 +245,14 @@ const CategoryManagement = () => {
                     type="text"
                     required
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, name: e.target.value });
+                      if (errors.name) setErrors({ ...errors, name: '' });
+                    }}
                     className="input"
                     placeholder="VD: Món Khai Vị"
                   />
+                  {errors.name && <p className="text-red-500 text-xs font-bold mt-1 ml-1">{errors.name}</p>}
                 </div>
                 
                 <div className="space-y-2">
@@ -161,11 +260,29 @@ const CategoryManagement = () => {
                   <input
                     type="number"
                     required
+                    min="0"
                     value={formData.order}
-                    onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, order: parseInt(e.target.value) || 0 });
+                      if (errors.order) setErrors({ ...errors, order: '' });
+                    }}
                     className="input"
                   />
+                  {errors.order && <p className="text-red-500 text-xs font-bold mt-1 ml-1">{errors.order}</p>}
                 </div>
+
+                <label className="flex items-center gap-3 cursor-pointer p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={formData.isActive}
+                    onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                    className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-primary">Hiển thị trên website</span>
+                    <span className="text-xs text-gray-500">Cho phép người dùng thấy danh mục này</span>
+                  </div>
+                </label>
 
                 <div className="flex gap-4 pt-4">
                   <button type="button" onClick={closeModal} className="flex-1 btn bg-gray-100 text-gray-600 hover:bg-gray-200">

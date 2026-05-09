@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MediaUpload from '../components/MediaUpload';
+import { useModal } from '../contexts/ModalContext';
 
 const MenuManagement = () => {
   const [items, setItems] = useState([]);
@@ -14,6 +15,7 @@ const MenuManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const { showAlert, showConfirm } = useModal();
   const [filterCategory, setFilterCategory] = useState('');
   const [filterTag, setFilterTag] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -73,19 +75,28 @@ const MenuManagement = () => {
       }
       await fetchItems(pagination.page); // Đợi lấy dữ liệu mới xong mới đóng modal
       closeModal();
+      showAlert('Thành công', 'Lưu món ăn thành công', 'success');
     } catch (err) {
-      alert(err.message || 'Lỗi khi lưu món ăn');
+      showAlert('Lỗi', err.message || 'Lỗi khi lưu món ăn', 'error');
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Xóa món ăn này?')) return;
-    try {
-      await api.delete(`/admin/menu-items/${id}`);
-      fetchItems(pagination.page);
-    } catch (err) { alert(err.message); }
+    showConfirm(
+      'Xác nhận xóa',
+      'Bạn có chắc chắn muốn xóa món ăn này?',
+      async () => {
+        try {
+          await api.delete(`/admin/menu-items/${id}`);
+          fetchItems(pagination.page);
+          showAlert('Thành công', 'Đã xóa món ăn', 'success');
+        } catch (err) {
+          showAlert('Lỗi', err.message, 'error');
+        }
+      }
+    );
   };
 
   const openModal = (item = null) => {
