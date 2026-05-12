@@ -1,25 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import api from '../api/client';
-import { 
-  Plus, Edit2, Trash2, Loader2, Save, X, Search, 
-  Filter, Image as ImageIcon, ChevronLeft, ChevronRight, Star
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  ChevronLeft, ChevronRight,
+  Edit2,
+  Filter, Image as ImageIcon,
+  Loader2,
+  Plus,
+  Save,
+  Search,
+  Star,
+  Trash2,
+  X
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import api from '../api/client';
 import MediaUpload from '../components/MediaUpload';
 import { useModal } from '../contexts/ModalContext';
+import { getOptimizedImageUrl } from '../utils/imageOptimization';
 
 const MenuManagement = () => {
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [isImageUploading, setIsImageUploading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
   const { showAlert, showConfirm } = useModal();
   const [filterCategory, setFilterCategory] = useState('');
   const [filterTag, setFilterTag] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   // Pagination State
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, limit: 10, total: 0 });
 
@@ -47,9 +57,10 @@ const MenuManagement = () => {
       let url = `/public/menu-items?admin=true&page=${page}&limit=10&_t=${Date.now()}`;
       if (filterCategory) url += `&category=${filterCategory}`;
       if (filterTag) url += `&tag=${filterTag}`;
-      
+
       const res = await api.get(url);
       if (res.success) {
+        console.log('--- FETCHED ITEMS ---', res.data.items.map(i => ({ id: i._id, name: i.name, images: i.images })));
         setItems(res.data.items);
         setPagination(res.data.pagination);
       }
@@ -67,16 +78,25 @@ const MenuManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    console.log('--- SUBMITTING FORM DATA ---');
+    console.log('Images:', formData.images);
     try {
       if (editingItem) {
         await api.put(`/admin/menu-items/${editingItem._id}`, formData);
       } else {
         await api.post('/admin/menu-items', formData);
       }
-      await fetchItems(pagination.page); // Đợi lấy dữ liệu mới xong mới đóng modal
+
+      // Bước 1: Tải lại dữ liệu mới nhất từ server
+      await fetchItems(pagination.page);
+
+      // Bước 2: Đóng modal
       closeModal();
+
+      // Bước 3: Thông báo thành công
       showAlert('Thành công', 'Lưu món ăn thành công', 'success');
     } catch (err) {
+      console.error('Submit error:', err);
       showAlert('Lỗi', err.message || 'Lỗi khi lưu món ăn', 'error');
     } finally {
       setSubmitting(false);
@@ -108,18 +128,18 @@ const MenuManagement = () => {
         price: item.price,
         categoryId: item.categoryId?._id || item.categoryId,
         tags: { ...item.tags },
-        images: item.images?.length > 0 
-          ? item.images 
-          : (item.image 
-              ? [typeof item.image === 'string' ? { url: item.image, publicId: '' } : item.image] 
-              : []),
+        images: item.images?.length > 0
+          ? item.images
+          : (item.image
+            ? [typeof item.image === 'string' ? { url: item.image, publicId: '' } : item.image]
+            : []),
         isActive: item.isActive
       });
     } else {
       setEditingItem(null);
       setFormData({
-        name: '', 
-        description: '', 
+        name: '',
+        description: '',
         price: 0,
         categoryId: categories[0]?._id || '',
         tags: { isSignature: false, isMustTry: false, isBestSeller: false },
@@ -135,7 +155,7 @@ const MenuManagement = () => {
     setEditingItem(null);
   };
 
-  const filteredItems = items.filter(item => 
+  const filteredItems = items.filter(item =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -146,8 +166,11 @@ const MenuManagement = () => {
           <h2 className="text-3xl font-bold text-primary font-serif">Thực đơn</h2>
           <p className="text-gray-500">Quản lý các món ăn trong quán ({pagination.total} món)</p>
         </div>
-        <button onClick={() => openModal()} className="btn-primary flex items-center gap-2">
-          <Plus size={20} />
+        <button 
+          onClick={() => openModal()} 
+          className="btn-primary px-4 py-2 sm:px-6 sm:py-2.5 text-sm sm:text-base flex items-center gap-2"
+        >
+          <Plus size={18} className="sm:w-5 sm:h-5" />
           <span>Thêm món mới</span>
         </button>
       </header>
@@ -156,24 +179,24 @@ const MenuManagement = () => {
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-          <input 
-            type="text" 
-            placeholder="Tìm kiếm món ăn..." 
+          <input
+            type="text"
+            placeholder="Tìm kiếm món ăn..."
             className="input pl-10"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        
+
         <div className="flex flex-wrap gap-4">
           <div className="flex items-center gap-2 bg-white px-4 py-1 rounded-xl border border-primary/5 shadow-sm min-w-[200px]">
             <Filter size={18} className="text-primary" />
-            <select 
+            <select
               className="bg-transparent border-none focus:ring-0 text-sm font-bold text-gray-600 w-full outline-none py-2"
               value={filterCategory}
               onChange={(e) => {
                 setFilterCategory(e.target.value);
-                setPagination({...pagination, page: 1});
+                setPagination({ ...pagination, page: 1 });
               }}
             >
               <option value="">Tất cả danh mục</option>
@@ -183,12 +206,12 @@ const MenuManagement = () => {
 
           <div className="flex items-center gap-2 bg-white px-4 py-1 rounded-xl border border-primary/5 shadow-sm min-w-[180px]">
             <Star size={18} className="text-secondary" />
-            <select 
+            <select
               className="bg-transparent border-none focus:ring-0 text-sm font-bold text-gray-600 w-full outline-none py-2"
               value={filterTag}
               onChange={(e) => {
                 setFilterTag(e.target.value);
-                setPagination({...pagination, page: 1});
+                setPagination({ ...pagination, page: 1 });
               }}
             >
               <option value="">Tất cả nhãn</option>
@@ -225,8 +248,12 @@ const MenuManagement = () => {
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center overflow-hidden shrink-0 border border-gray-100">
                           {(() => {
-                            const img = item.images?.[0]?.url || (typeof item.image === 'string' ? item.image : item.image?.url);
-                            return img ? <img src={img} className="w-full h-full object-cover" alt={item.name} /> : <ImageIcon className="text-gray-300" size={20} />;
+                            const rawImg = item.images?.[0]?.url || (typeof item.image === 'string' ? item.image : item.image?.url);
+                            // Dùng thời gian cập nhật để phá cache, tránh việc reload liên tục
+                            const cacheBuster = item.updatedAt ? new Date(item.updatedAt).getTime() : '';
+                            const baseImg = rawImg ? getOptimizedImageUrl(rawImg, 150) : null;
+                            const img = baseImg ? `${baseImg}${baseImg.includes('?') ? '&' : '?'}t=${cacheBuster}` : null;
+                            return img ? <img src={img} className="w-full h-full object-cover" alt={item.name} loading="lazy" /> : <ImageIcon className="text-gray-300" size={20} />;
                           })()}
                         </div>
                         <div>
@@ -271,42 +298,41 @@ const MenuManagement = () => {
 
         {/* Pagination Controls */}
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
-           <div className="text-sm text-gray-500 font-medium">
-              Hiển thị {filteredItems.length} trên tổng số {pagination.total} món ăn
-           </div>
-           <div className="flex items-center gap-2">
-              <button 
-                disabled={pagination.page <= 1}
-                onClick={() => setPagination({...pagination, page: pagination.page - 1})}
-                className="p-2 rounded-xl hover:bg-white hover:shadow-sm disabled:opacity-30 transition-all border border-transparent hover:border-gray-200"
-              >
-                <ChevronLeft size={20} />
-              </button>
-              
-              <div className="flex items-center gap-1">
-                {[...Array(pagination.totalPages)].map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setPagination({...pagination, page: i + 1})}
-                    className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${
-                      pagination.page === i + 1 
-                        ? 'bg-primary text-white shadow-md' 
-                        : 'hover:bg-white hover:border-gray-200 border border-transparent'
-                    }`}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
-              </div>
+          <div className="text-sm text-gray-500 font-medium">
+            Hiển thị {filteredItems.length} trên tổng số {pagination.total} món ăn
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              disabled={pagination.page <= 1}
+              onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
+              className="p-2 rounded-xl hover:bg-white hover:shadow-sm disabled:opacity-30 transition-all border border-transparent hover:border-gray-200"
+            >
+              <ChevronLeft size={20} />
+            </button>
 
-              <button 
-                disabled={pagination.page >= pagination.totalPages}
-                onClick={() => setPagination({...pagination, page: pagination.page + 1})}
-                className="p-2 rounded-xl hover:bg-white hover:shadow-sm disabled:opacity-30 transition-all border border-transparent hover:border-gray-200"
-              >
-                <ChevronRight size={20} />
-              </button>
-           </div>
+            <div className="flex items-center gap-1">
+              {[...Array(pagination.totalPages)].map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setPagination({ ...pagination, page: i + 1 })}
+                  className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${pagination.page === i + 1
+                    ? 'bg-primary text-white shadow-md'
+                    : 'hover:bg-white hover:border-gray-200 border border-transparent'
+                    }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+
+            <button
+              disabled={pagination.page >= pagination.totalPages}
+              onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
+              className="p-2 rounded-xl hover:bg-white hover:shadow-sm disabled:opacity-30 transition-all border border-transparent hover:border-gray-200"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -314,7 +340,7 @@ const MenuManagement = () => {
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={closeModal} />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/40 backdrop-blur-md" onClick={closeModal} />
             <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }} className="relative bg-white w-full max-w-2xl rounded-3xl shadow-2xl p-8 my-auto">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-2xl font-bold text-primary">{editingItem ? 'Sửa món ăn' : 'Thêm món ăn mới'}</h3>
@@ -344,11 +370,13 @@ const MenuManagement = () => {
                 </div>
 
                 <div className="space-y-6">
-                  <MediaUpload 
+                  <MediaUpload
                     label="Hình ảnh món ăn"
                     multiple={true}
+                    aspect={1}
                     value={formData.images}
-                    onChange={(imgs) => setFormData({ ...formData, images: imgs })}
+                    onChange={(imgs) => setFormData(prev => ({ ...prev, images: imgs }))}
+                    onUploadStateChange={setIsImageUploading}
                   />
 
                   <div className="space-y-3">
@@ -370,9 +398,24 @@ const MenuManagement = () => {
                   </div>
 
                   <div className="flex gap-4 pt-4">
-                    <button type="submit" disabled={submitting} className="flex-1 btn-primary">
-                      {submitting ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
-                      <span>Lưu lại</span>
+                    <button
+                      type="submit"
+                      disabled={submitting || isImageUploading}
+                      className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {submitting ? (
+                        <Loader2 className="animate-spin" size={20} />
+                      ) : isImageUploading ? (
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="animate-spin" size={18} />
+                          <span>Đang tải ảnh...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <Save size={20} />
+                          <span>Lưu lại</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>

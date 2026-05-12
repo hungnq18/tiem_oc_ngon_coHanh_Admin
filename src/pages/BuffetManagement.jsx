@@ -75,9 +75,9 @@ const BuffetManagement = () => {
         <button 
           onClick={handleSave} 
           disabled={submitting}
-          className="btn-primary flex items-center gap-2 shadow-xl"
+          className="btn-primary px-4 py-2 sm:px-6 sm:py-2.5 text-sm sm:text-base flex items-center gap-2 shadow-xl"
         >
-          {submitting ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+          {submitting ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} className="sm:w-5 sm:h-5" />}
           <span>Lưu thay đổi</span>
         </button>
       </header>

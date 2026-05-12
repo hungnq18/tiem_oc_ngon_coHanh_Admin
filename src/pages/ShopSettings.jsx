@@ -71,6 +71,10 @@ const ShopSettings = () => {
     email: '',
     openTime: '',
     closeTime: '',
+    morningOpenTime: '',
+    morningCloseTime: '',
+    afternoonOpenTime: '',
+    afternoonCloseTime: '',
     socialLinks: { facebook: '', tiktok: '', instagram: '' },
     founder: { name: '', bio: '', image: { url: '', publicId: '' } },
     cta: [],
@@ -189,8 +193,9 @@ const ShopSettings = () => {
               <div className="space-y-1">
                 <MediaUpload 
                   label="Logo cửa hàng"
+                  aspect={1.5}
                   value={config.logo}
-                  onChange={(imgData) => setConfig({ ...config, logo: imgData })}
+                  onChange={(imgData) => setConfig(prev => ({ ...prev, logo: imgData }))}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -201,6 +206,28 @@ const ShopSettings = () => {
                 <div className="space-y-1">
                   <label className="text-sm font-bold text-primary">Giờ đóng</label>
                   <input type="time" className="input" value={config.closeTime} onChange={(e) => setConfig({...config, closeTime: e.target.value})} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-sm font-bold text-primary">Mở cửa buổi sáng</label>
+                  <input type="time" className="input" value={config.morningOpenTime} onChange={(e) => setConfig({...config, morningOpenTime: e.target.value})} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-bold text-primary">Đóng cửa buổi sáng</label>
+                  <input type="time" className="input" value={config.morningCloseTime} onChange={(e) => setConfig({...config, morningCloseTime: e.target.value})} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-sm font-bold text-primary">Mở cửa buổi chiều</label>
+                  <input type="time" className="input" value={config.afternoonOpenTime} onChange={(e) => setConfig({...config, afternoonOpenTime: e.target.value})} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-bold text-primary">Đóng cửa buổi chiều</label>
+                  <input type="time" className="input" value={config.afternoonCloseTime} onChange={(e) => setConfig({...config, afternoonCloseTime: e.target.value})} />
                 </div>
               </div>
               <div className="space-y-1">
@@ -270,6 +297,7 @@ const ShopSettings = () => {
                       <div className="pt-2 border-t border-primary/5">
                         <MediaUpload 
                           label="Tải ảnh biểu tượng riêng"
+                          aspect={1}
                           value={item.iconImage}
                           onChange={(img) => updateCta(idx, 'iconImage', img)}
                         />
@@ -314,11 +342,12 @@ const ShopSettings = () => {
             <div className="space-y-6">
               <MediaUpload 
                 label="Ảnh đại diện Cô Hạnh"
+                aspect={1}
                 value={config.founder.image}
-                onChange={(imgData) => setConfig({
-                  ...config, 
-                  founder: { ...config.founder, image: imgData }
-                })}
+                onChange={(imgData) => setConfig(prev => ({
+                  ...prev, 
+                  founder: { ...prev.founder, image: imgData }
+                }))}
               />
               <div className="space-y-1">
                 <label className="text-sm font-bold text-primary">Tên</label>

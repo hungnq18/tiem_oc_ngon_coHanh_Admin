@@ -7,10 +7,34 @@
     <title>Admin Dashboard | Tiệm Ốc Cô Hạnh</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://res.cloudinary.com" />
+    <link rel="preconnect" href="%VITE_API_URL%" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Dancing+Script:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <style>
+        .initial-skeleton {
+          background-color: #FFF9F1;
+          width: 100%;
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: fixed;
+          inset: 0;
+          z-index: 9999;
+        }
+        @keyframes pulse-logo {
+          0%, 100% { transform: scale(1); opacity: 0.8; }
+          50% { transform: scale(1.1); opacity: 1; }
+        }
+      </style>
+      <div class="initial-skeleton">
+         <img src="https://res.cloudinary.com/dijayprrw/image/upload/v1778577508/tiemoc_assets_static/logo.png" 
+              style="width: 150px; height: auto; animation: pulse-logo 2s infinite ease-in-out;" />
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -144,8 +144,11 @@ const CategoryManagement = () => {
           <h2 className="text-3xl font-bold text-primary font-serif">Danh mục</h2>
           <p className="text-gray-500">Quản lý các nhóm món ăn trên website</p>
         </div>
-        <button onClick={() => openModal()} className="btn-primary flex items-center gap-2">
-          <Plus size={20} />
+        <button 
+          onClick={() => openModal()} 
+          className="btn-primary px-4 py-2 sm:px-6 sm:py-2.5 text-sm sm:text-base flex items-center gap-2"
+        >
+          <Plus size={18} className="sm:w-5 sm:h-5" />
           <span>Thêm danh mục</span>
         </button>
       </header>
